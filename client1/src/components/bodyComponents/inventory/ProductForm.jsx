@@ -1,0 +1,209 @@
+// components/bodyComponents/inventory/ProductForm.jsx
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { createProduct, updateProduct } from "../../../redux/features/products/productSlice";
+
+const defaultFormData = {
+  name: "",
+  description: "",
+  price: "",
+  category: "",
+  subcategory: "",
+  quantity: "",
+  stock: "",
+  sku: "",
+  imageUrl: "",
+};
+
+const ProductForm = ({ initialData = defaultFormData, mode = "create", onSuccess }) => {
+  const dispatch = useDispatch();
+  const { loading, error: apiError } = useSelector((state) => state.products);
+
+  const [formData, setFormData] = useState(initialData);
+  const [errors, setErrors] = useState({});
+
+  // Update form data when initialData changes (useful for edit mode)
+  useEffect(() => {
+    setFormData(initialData);
+  }, [initialData]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.price || isNaN(formData.price))
+      newErrors.price = "Valid price is required";
+    if (!formData.category.trim())
+      newErrors.category = "Category is required";
+    if (!formData.subcategory.trim())
+      newErrors.subcategory = "Subcategory is required";
+    if (!formData.quantity || isNaN(formData.quantity))
+      newErrors.quantity = "Valid quantity is required";
+    if (!formData.stock || isNaN(formData.stock))
+      newErrors.stock = "Valid stock is required";
+    if (!formData.imageUrl.trim())
+      newErrors.imageUrl = "Image URL is required";
+    return newErrors;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length !== 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
+    const payload = {
+      ...formData,
+      price: parseFloat(formData.price),
+      quantity: parseInt(formData.quantity, 10),
+      stock: parseInt(formData.stock, 10),
+    };
+
+    if (mode === "create") {
+      dispatch(createProduct(payload))
+        .unwrap()
+        .then(() => {
+          if (onSuccess) onSuccess();
+        })
+        .catch((err) => {
+          console.error("Product creation failed:", err);
+        });
+    } else if (mode === "edit") {
+      dispatch(updateProduct(payload))
+        .unwrap()
+        .then(() => {
+          if (onSuccess) onSuccess();
+        })
+        .catch((err) => {
+          console.error("Product update failed:", err);
+        });
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label>Name:</label>
+        <input
+          type="text"
+          name="name"
+          value={formData.name || ""}
+          onChange={handleChange}
+          required
+        />
+        {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
+      </div>
+
+      <div>
+        <label>Description:</label>
+        <textarea
+          name="description"
+          value={formData.description || ""}
+          onChange={handleChange}
+          required
+        />
+        {errors.description && <p style={{ color: "red" }}>{errors.description}</p>}
+      </div>
+
+      <div>
+        <label>Price:</label>
+        <input
+          type="number"
+          step="0.01"
+          name="price"
+          value={formData.price || ""}
+          onChange={handleChange}
+          required
+        />
+        {errors.price && <p style={{ color: "red" }}>{errors.price}</p>}
+      </div>
+
+      <div>
+        <label>Category:</label>
+        <input
+          type="text"
+          name="category"
+          value={formData.category || ""}
+          onChange={handleChange}
+          required
+        />
+        {errors.category && <p style={{ color: "red" }}>{errors.category}</p>}
+      </div>
+
+      <div>
+        <label>Subcategory:</label>
+        <input
+          type="text"
+          name="subcategory"
+          value={formData.subcategory || ""}
+          onChange={handleChange}
+          required
+        />
+        {errors.subcategory && <p style={{ color: "red" }}>{errors.subcategory}</p>}
+      </div>
+
+      <div>
+        <label>Quantity:</label>
+        <input
+          type="number"
+          name="quantity"
+          value={formData.quantity || ""}
+          onChange={handleChange}
+          required
+        />
+        {errors.quantity && <p style={{ color: "red" }}>{errors.quantity}</p>}
+      </div>
+
+      <div>
+        <label>Stock:</label>
+        <input
+          type="number"
+          name="stock"
+          value={formData.stock || ""}
+          onChange={handleChange}
+          required
+        />
+        {errors.stock && <p style={{ color: "red" }}>{errors.stock}</p>}
+      </div>
+
+      <div>
+        <label>SKU:</label>
+        <input
+          type="text"
+          name="sku"
+          value={formData.sku || ""}
+          onChange={handleChange}
+        />
+        {errors.sku && <p style={{ color: "red" }}>{errors.sku}</p>}
+      </div>
+
+      <div>
+        <label>Image URL:</label>
+        <input
+          type="text"
+          name="imageUrl"
+          value={formData.imageUrl || ""}
+          onChange={handleChange}
+        />
+        {errors.imageUrl && <p style={{ color: "red" }}>{errors.imageUrl}</p>}
+      </div>
+
+      <button type="submit" disabled={loading}>
+        {loading ? (mode === "create" ? "Creating..." : "Updating...") : (mode === "create" ? "Create Product" : "Update Product")}
+      </button>
+
+      {apiError && <p style={{ color: "red" }}>{apiError}</p>}
+    </form>
+  );
+};
+
+export default ProductForm;

@@ -1,0 +1,26 @@
+# .gitignore at /korutla/.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Node modules
+client1/node_modules
+server/node_modules
+
+# Build outputs
+dist
+dist-ssr
+
+# Editor files
+.vscode/
+.idea
+.DS_Store
+
+# Environment variables (both client & server)
+client1/.env
+client1/.env.*
+server/.env
+server/.env.*

@@ -1,0 +1,39 @@
+/* App.css */
+
+/* Global Reset and Box Sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure body fills the viewport and adjusts font size */
+body {
+  min-width: 320px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Example responsive typography */
+h1, h2, h3, h4, h5, h6 {
+  /* Adjust headings for mobile screens */
+  font-size: 1.5rem;
+}
+
+@media (min-width: 600px) {
+  h1 {
+    font-size: 2rem;
+  }
+}
+
+/* You can add more custom classes to help with responsiveness */
+.responsive-container {
+  padding: 16px;
+}
+
+@media (max-width: 600px) {
+  .responsive-container {
+    padding: 8px;
+  }
+}
