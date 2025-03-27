@@ -1,7 +1,13 @@
 // components/bodyComponents/inventory/ProductForm.jsx
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { createProduct, updateProduct } from "../../../redux/features/products/productSlice";
+import {
+  createProduct,
+  fetchCategories,
+  fetchSubcategories,
+  fetchUnits,
+  updateProduct,
+} from "../../../redux/features/products/productSlice";
 
 const defaultFormData = {
   name: "",
@@ -10,14 +16,25 @@ const defaultFormData = {
   category: "",
   subcategory: "",
   quantity: "",
+  unit: "",
   stock: "",
   sku: "",
   imageUrl: "",
 };
 
-const ProductForm = ({ initialData = defaultFormData, mode = "create", onSuccess }) => {
+const ProductForm = ({
+  initialData = defaultFormData,
+  mode = "create",
+  onSuccess,
+}) => {
   const dispatch = useDispatch();
-  const { loading, error: apiError } = useSelector((state) => state.products);
+  const {
+    loading,
+    error: apiError,
+    categories,
+    subcategories,
+    units,
+  } = useSelector((state) => state.products);
 
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState({});
@@ -27,6 +44,19 @@ const ProductForm = ({ initialData = defaultFormData, mode = "create", onSuccess
     setFormData(initialData);
   }, [initialData]);
 
+  // Fetch categories on mount
+  useEffect(() => {
+    dispatch(fetchCategories());
+    dispatch(fetchUnits());
+  }, [dispatch]);
+
+  // When a category is already selected (e.g., in edit mode) or changes, fetch its subcategories
+  useEffect(() => {
+    if (formData.category) {
+      dispatch(fetchSubcategories(formData.category));
+    }
+  }, [dispatch, formData.category]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -35,21 +65,33 @@ const ProductForm = ({ initialData = defaultFormData, mode = "create", onSuccess
     }));
   };
 
+  // Special handler for the category dropdown to also fetch subcategories
+  const handleCategoryChange = (e) => {
+    const selectedCategory = e.target.value;
+    setFormData((prevData) => ({
+      ...prevData,
+      category: selectedCategory,
+      subcategory: "", // reset subcategory when category changes
+    }));
+    if (selectedCategory) {
+      dispatch(fetchSubcategories(selectedCategory));
+    }
+  };
+
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.price || isNaN(formData.price))
       newErrors.price = "Valid price is required";
-    if (!formData.category.trim())
-      newErrors.category = "Category is required";
+    if (!formData.category.trim()) newErrors.category = "Category is required";
     if (!formData.subcategory.trim())
       newErrors.subcategory = "Subcategory is required";
     if (!formData.quantity || isNaN(formData.quantity))
       newErrors.quantity = "Valid quantity is required";
+    if (!formData.unit.trim()) newErrors.unit = "Unit is required";
     if (!formData.stock || isNaN(formData.stock))
       newErrors.stock = "Valid stock is required";
-    if (!formData.imageUrl.trim())
-      newErrors.imageUrl = "Image URL is required";
+    if (!formData.imageUrl.trim()) newErrors.imageUrl = "Image URL is required";
     return newErrors;
   };
 
@@ -111,7 +153,9 @@ const ProductForm = ({ initialData = defaultFormData, mode = "create", onSuccess
           onChange={handleChange}
           required
         />
-        {errors.description && <p style={{ color: "red" }}>{errors.description}</p>}
+        {errors.description && (
+          <p style={{ color: "red" }}>{errors.description}</p>
+        )}
       </div>
 
       <div>
@@ -127,40 +171,76 @@ const ProductForm = ({ initialData = defaultFormData, mode = "create", onSuccess
         {errors.price && <p style={{ color: "red" }}>{errors.price}</p>}
       </div>
 
+      {/* Category Dropdown */}
       <div>
         <label>Category:</label>
-        <input
-          type="text"
+        <select
           name="category"
           value={formData.category || ""}
-          onChange={handleChange}
+          onChange={handleCategoryChange}
           required
-        />
+        >
+          <option value="">Select a category</option>
+          {categories.map((cat) => (
+            <option key={cat._id} value={cat._id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
         {errors.category && <p style={{ color: "red" }}>{errors.category}</p>}
       </div>
 
+      {/* Subcategory Dropdown */}
       <div>
         <label>Subcategory:</label>
-        <input
-          type="text"
+        <select
           name="subcategory"
           value={formData.subcategory || ""}
           onChange={handleChange}
           required
-        />
-        {errors.subcategory && <p style={{ color: "red" }}>{errors.subcategory}</p>}
+        >
+          <option value="">Select a subcategory</option>
+          {subcategories.map((sub) => (
+            <option key={sub._id} value={sub._id}>
+              {sub.name}
+            </option>
+          ))}
+        </select>
+        {errors.subcategory && (
+          <p style={{ color: "red" }}>{errors.subcategory}</p>
+        )}
       </div>
 
-      <div>
-        <label>Quantity:</label>
-        <input
-          type="number"
-          name="quantity"
-          value={formData.quantity || ""}
-          onChange={handleChange}
-          required
-        />
-        {errors.quantity && <p style={{ color: "red" }}>{errors.quantity}</p>}
+      {/* Quantity and Units */}
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ marginRight: "1rem" }}>
+          <label>Quantity:</label>
+          <input
+            type="number"
+            name="quantity"
+            value={formData.quantity || ""}
+            onChange={handleChange}
+            required
+          />
+          {errors.quantity && <p style={{ color: "red" }}>{errors.quantity}</p>}
+        </div>
+        <div>
+          <label>Unit:</label>
+          <select
+            name="unit"
+            value={formData.unit || ""}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select a unit</option>
+            {units.map((unit) => (
+              <option key={unit._id} value={unit._id}>
+                {unit.name}
+              </option>
+            ))}
+          </select>
+          {errors.unit && <p style={{ color: "red" }}>{errors.unit}</p>}
+        </div>
       </div>
 
       <div>
@@ -198,7 +278,13 @@ const ProductForm = ({ initialData = defaultFormData, mode = "create", onSuccess
       </div>
 
       <button type="submit" disabled={loading}>
-        {loading ? (mode === "create" ? "Creating..." : "Updating...") : (mode === "create" ? "Create Product" : "Update Product")}
+        {loading
+          ? mode === "create"
+            ? "Creating..."
+            : "Updating..."
+          : mode === "create"
+          ? "Create Product"
+          : "Update Product"}
       </button>
 
       {apiError && <p style={{ color: "red" }}>{apiError}</p>}
